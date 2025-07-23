@@ -44,13 +44,13 @@ import (
 )
 
 var (
-	myFqdn      = kingpin.Flag("fqdn", "FQDN to register with").Default(fqdn.Get()).String()
-	proxyURL    = kingpin.Flag("proxy-url", "Push proxy to talk to.").Required().String()
-	caCertFile  = kingpin.Flag("tls.cacert", "<file> CA certificate to verify peer against").String()
-	tlsCert     = kingpin.Flag("tls.cert", "<cert> Client certificate file").String()
-	tlsKey      = kingpin.Flag("tls.key", "<key> Private key file").String()
-	metricsAddr = kingpin.Flag("metrics-addr", "Serve Prometheus metrics at this address").Default(":9369").String()
-	bearerTokenPath = kingpin.Flag("bearer-token-path", "<path> Path to file containing bearer token to authenticate requests").String()
+	myFqdn           = kingpin.Flag("fqdn", "FQDN to register with").Default(fqdn.Get()).String()
+	proxyURL         = kingpin.Flag("proxy-url", "Push proxy to talk to.").Required().String()
+	caCertFile       = kingpin.Flag("tls.cacert", "<file> CA certificate to verify peer against").String()
+	tlsCert          = kingpin.Flag("tls.cert", "<cert> Client certificate file").String()
+	tlsKey           = kingpin.Flag("tls.key", "<key> Private key file").String()
+	metricsAddr      = kingpin.Flag("metrics-addr", "Serve Prometheus metrics at this address").Default(":9369").String()
+	bearerTokenPath  = kingpin.Flag("bearer-token-path", "<path> Path to file containing bearer token to authenticate requests").String()
 	retryInitialWait = kingpin.Flag("proxy.retry.initial-wait", "Amount of time to wait after proxy failure").Default("1s").Duration()
 	retryMaxWait     = kingpin.Flag("proxy.retry.max-wait", "Maximum amount of time to wait between proxy poll retries").Default("5s").Duration()
 )
@@ -126,7 +126,7 @@ func (c *Coordinator) doScrape(request *http.Request, client *http.Client) {
 	bearerTokenMutex.RUnlock()
 
 	if token != "" {
-			request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	}
 
 	ctx, cancel := context.WithTimeout(request.Context(), timeout)
@@ -244,49 +244,49 @@ func (c *Coordinator) loop(bo backoff.BackOff, client *http.Client) {
 // i.e. if it a short lived kubernetes token one
 func watchBearerTokenFile(path string, logger *slog.Logger) {
 	loadBearerToken := func() {
-			tokenBytes, err := os.ReadFile(path)
-			if err != nil {
-					logger.Error("Failed to read bearer token", "path", path, "err", err)
-					return
-			}
-			bearerTokenMutex.Lock()
-			bearerToken = strings.TrimSpace(string(tokenBytes)) // also trim spaces/newlines
-			bearerTokenMutex.Unlock()
-			logger.Info("Bearer token loaded from file", "path", path)
+		tokenBytes, err := os.ReadFile(path)
+		if err != nil {
+			logger.Error("Failed to read bearer token", "path", path, "err", err)
+			return
+		}
+		bearerTokenMutex.Lock()
+		bearerToken = strings.TrimSpace(string(tokenBytes)) // also trim spaces/newlines
+		bearerTokenMutex.Unlock()
+		logger.Info("Bearer token loaded from file", "path", path)
 	}
 
 	loadBearerToken() // initial load
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-			logger.Error("Failed to create fsnotify watcher", "err", err)
-			os.Exit(1)
+		logger.Error("Failed to create fsnotify watcher", "err", err)
+		os.Exit(1)
 	}
 	defer watcher.Close()
 
 	tokenDir := filepath.Dir(path)
 	if err := watcher.Add(tokenDir); err != nil {
-			logger.Error("Failed to watch token directory", "dir", tokenDir, "err", err)
-			os.Exit(1)
+		logger.Error("Failed to watch token directory", "dir", tokenDir, "err", err)
+		os.Exit(1)
 	}
 
 	for {
-			select {
-			case event, ok := <-watcher.Events:
-					if !ok {
-							return
-					}
-					if event.Name == path &&
-							(event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create) {
-							logger.Info("Bearer token file changed, reloading", "event", event)
-							loadBearerToken()
-					}
-			case err, ok := <-watcher.Errors:
-					if !ok {
-							return
-					}
-					logger.Warn("fsnotify error", "err", err)
+		select {
+		case event, ok := <-watcher.Events:
+			if !ok {
+				return
 			}
+			if event.Name == path &&
+				(event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create) {
+				logger.Info("Bearer token file changed, reloading", "event", event)
+				loadBearerToken()
+			}
+		case err, ok := <-watcher.Errors:
+			if !ok {
+				return
+			}
+			logger.Warn("fsnotify error", "err", err)
+		}
 	}
 }
 

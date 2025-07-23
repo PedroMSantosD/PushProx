@@ -188,7 +188,6 @@ func TestLoopWithBackoff(t *testing.T) {
 	}
 }
 
-
 func backoffForTest(maxRetries int) backoff.BackOff {
 	b := backoff.NewExponentialBackOff()
 	b.InitialInterval = 1 * time.Millisecond
